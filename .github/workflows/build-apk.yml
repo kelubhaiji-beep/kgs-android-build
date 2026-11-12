@@ -1,3 +1,4 @@
+
 name: Build KGS Android APK
 
 on:
@@ -11,30 +12,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
       - name: Extract KGS source
         run: |
-          mkdir -p source
-          unzip -o KGS_source.zip -d source
+          test -f KGS_source.zip
+          mkdir -p app
+          unzip -q KGS_source.zip -d app
+          PUBSPEC="$(find app -name pubspec.yaml -type f | head -n 1)"
+          test -n "$PUBSPEC"
+          PROJECT_DIR="$(dirname "$PUBSPEC")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
       - name: Generate Android project
-        working-directory: source
-        run: flutter create --platforms=android --org com.kgs.kailashpati .
+        run: |
+          cd "$PROJECT_DIR"
+          flutter create --platforms=android --org com.kgs.kailashpati --project-name kgs_grocery_app .
+
       - name: Get packages
-        working-directory: source
-        run: flutter pub get
+        run: |
+          cd "$PROJECT_DIR"
+          flutter pub get
+
       - name: Build APK
-        working-directory: source
-        run: flutter build apk --debug
+        run: |
+          cd "$PROJECT_DIR"
+          flutter build apk --debug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: KGS-Android-APK
-          path: source/build/app/outputs/flutter-apk/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
-          retention-days: 7
+          
