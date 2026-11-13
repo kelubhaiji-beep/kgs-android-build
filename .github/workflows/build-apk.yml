@@ -30,7 +30,7 @@ jobs:
       - name: Extract KGS source
         run: |
           mkdir -p source
-          unzip -o KGS_source.zip -d source
+          unzip -o KGS_source_500_products.zip -d source
           test -f source/pubspec.yaml
 
       - name: Generate Android project
