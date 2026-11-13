@@ -1,0 +1,48 @@
+
+name: Build KGS Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Extract KGS source
+        run: |
+          test -f KGS_source.zip
+          mkdir -p source
+          unzip -o KGS_source.zip -d source
+          find source -name pubspec.yaml
+          test -f source/pubspec.yaml
+
+      - name: Generate Android project
+        working-directory: source
+        run: |
+          flutter create --platforms=android --org com.kgs.kailashpati --project-name kgs .
+
+      - name: Get packages
+        working-directory: source
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: source
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KGS-Android-APK
+          path: source/build/app/outputs/flutter-apk/app-release.apk
+          
