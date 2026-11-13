@@ -3,7 +3,8 @@ name: Build KGS Android APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -14,17 +15,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
       - name: Extract KGS source
         run: |
-          test -f KGS_source.zip
           mkdir -p source
           unzip -o KGS_source.zip -d source
-          find source -name pubspec.yaml
           test -f source/pubspec.yaml
 
       - name: Generate Android project
@@ -36,7 +42,11 @@ jobs:
         working-directory: source
         run: flutter pub get
 
-      - name: Build APK
+      - name: Check Flutter
+        working-directory: source
+        run: flutter doctor -v
+
+      - name: Build Debug APK
         working-directory: source
         run: flutter build apk --debug
 
@@ -45,4 +55,4 @@ jobs:
         with:
           name: KGS-Android-APK
           path: source/build/app/outputs/flutter-apk/app-debug.apk
-          
+          if-no-files-found: error
