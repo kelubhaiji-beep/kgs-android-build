@@ -48,7 +48,10 @@ jobs:
 
       - name: Build Debug APK
         working-directory: source
-        run: flutter build apk --debug
+        run: |
+          flutter build apk --debug \
+            --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+            --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -56,3 +59,4 @@ jobs:
           name: KGS-Android-APK
           path: source/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+          
