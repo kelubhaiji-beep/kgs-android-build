@@ -21,42 +21,44 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
 
-      - name: Extract KGS source
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Extract KGS GreenGold source
         run: |
           mkdir -p source
-          unzip -o KGS_source_500_products.zip -d source
-          test -f source/pubspec.yaml
+          unzip -o KGS_GreenGold_Theme_Source.zip -d source
+          test -f source/kgs-kailashpati-general-store-app-main/app/build.gradle.kts
 
-      - name: Generate Android project
-        working-directory: source
+      - name: Generate Gradle Wrapper
+        working-directory: source/kgs-kailashpati-general-store-app-main
+        run: gradle wrapper --gradle-version 9.3.1
+
+      - name: Configure KGS Secrets
+        working-directory: source/kgs-kailashpati-general-store-app-main
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          MERCHANT_UPI_VPA: ${{ secrets.MERCHANT_UPI_VPA }}
         run: |
-          flutter create --platforms=android --org com.kgs.kailashpati --project-name kgs .
+          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nMERCHANT_UPI_VPA=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$MERCHANT_UPI_VPA" > .env
 
-      - name: Get packages
-        working-directory: source
-        run: flutter pub get
-
-      - name: Check Flutter
-        working-directory: source
-        run: flutter doctor -v
-
-      - name: Build Debug APK
-        working-directory: source
+      - name: Build KGS Debug APK
+        working-directory: source/kgs-kailashpati-general-store-app-main
         run: |
-          flutter build apk --debug \
-            --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
-            --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Upload KGS APK
         uses: actions/upload-artifact@v4
         with:
-          name: KGS-Android-APK
-          path: source/build/app/outputs/flutter-apk/app-debug.apk
+          name: KGS-GreenGold-APK
+          path: source/kgs-kailashpati-general-store-app-main/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           
